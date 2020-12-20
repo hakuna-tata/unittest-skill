@@ -14,11 +14,11 @@ module.exports = {
         sidebar: {
             '/sinon/': [
                 {
-                    title: 'sinon',
+                    title: 'Sinon',
                     collapsable: false,
                     children: [
                         ['', 'Introduction'],
-                        'sandBox',   
+                        'sandbox',   
                     ]
                 }
             ],
