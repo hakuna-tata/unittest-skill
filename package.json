@@ -1,5 +1,5 @@
 {
-  "name": "unittest-sinon-skill",
+  "name": "unittest-skill",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -9,15 +9,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hakuna-tata/unittest-sinon-skill.git"
+    "url": "git+https://github.com/hakuna-tata/unittest-skill.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/hakuna-tata/unittest-sinon-skill/issues"
+    "url": "https://github.com/hakuna-tata/unittest-skill/issues"
   },
-  "homepage": "https://github.com/hakuna-tata/unittest-sinon-skill#readme",
+  "homepage": "https://github.com/hakuna-tata/unittest-skill#readme",
   "dependencies": {
     "vuepress": "^1.7.1"
   },
