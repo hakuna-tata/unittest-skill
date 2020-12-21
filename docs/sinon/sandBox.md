@@ -137,6 +137,7 @@ module.exports = createSandbox;
 config 为空，直接返回了`Sandbox 实例`。所以相对与`sinon`来说，最终的 `sandbox` 自然就少了“加强版”部分默认的`apiMethods`。
 
 3. const sandbox = sinon.createSandbox(config)
+
 ## 实际场景 Demo
 
 ## 总结
