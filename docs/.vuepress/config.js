@@ -18,7 +18,8 @@ module.exports = {
                     collapsable: false,
                     children: [
                         ['', 'Introduction'],
-                        'sandbox', 
+                        'sandbox',
+                        'restore'
                     ]
                 }
             ],
