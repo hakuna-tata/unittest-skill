@@ -259,7 +259,8 @@ module.exports = Sandbox;
 
 ## 实际场景 Demo
 
-[sandbox实际使用场景](https://github.com/hakuna-tata/unittest-skill/tree/master/examples/sandbox/sandbox.spec.js)
+[sandbox debug环境](https://github.com/hakuna-tata/unittest-skill/blob/master/examples/sandbox/index.js)  
+[sandbox 实际使用场景](https://github.com/hakuna-tata/unittest-skill/tree/master/examples/sandbox/sandbox.spec.js)
 
 ## 总结
 
