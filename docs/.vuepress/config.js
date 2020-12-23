@@ -19,7 +19,8 @@ module.exports = {
                     children: [
                         ['', 'Introduction'],
                         'sandbox',
-                        'restore'
+                        'restore',
+                        'spy'
                     ]
                 }
             ],

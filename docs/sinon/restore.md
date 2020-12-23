@@ -72,6 +72,7 @@ function Sandbox() {
 ## 实际场景Demo
 
 [restore debug环境](https://github.com/hakuna-tata/unittest-skill/blob/master/examples/restore/index.js)  
+[restore 实际使用场景](https://github.com/hakuna-tata/unittest-skill/tree/master/examples/sandbox/sandbox.spec.js)
 
 ## 总结  
 那么至此就把沙箱环境的创建和清理工作介绍完了。从下一节就开始介绍`sinon`那些非常核心的测试替代功能。

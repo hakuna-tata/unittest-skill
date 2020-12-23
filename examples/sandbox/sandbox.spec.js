@@ -4,10 +4,8 @@ const { expect } = require('chai');
 
 // 方法1
 describe('sinon_test',() => {
-    let spyFun;
-
     beforeEach(() => {
-        spyFun = sinon.spy(testDemo, 'add');
+        sinon.spy(testDemo, 'add');
     });
 
     afterEach(() => {
@@ -16,25 +14,25 @@ describe('sinon_test',() => {
 
     it('1+1=2',() => {
         testDemo.add(1, 1);
-        expect(spyFun.callCount).to.equal(1)
+        expect(testDemo.add.callCount).to.equal(1)
     });
 
     it('4+5!=10',function(){
         testDemo.add(4, 5);
-        expect(spyFun.callCount).to.equal(1);
+        expect(testDemo.add.callCount).to.equal(1);
     })
 })
 
 // 方法2
 describe('sandbox_test',() => {
-    let sandbox, spyFun;
+    let sandbox;
 
     before(() => {
         sandbox = sinon.createSandbox();
     });
     
     beforeEach(() => {
-        spyFun = sandbox.spy(testDemo, 'add');
+        sandbox.spy(testDemo, 'add');
     })
 
     afterEach(() => {
@@ -43,12 +41,12 @@ describe('sandbox_test',() => {
 
     it('1+1=2',() => {
         testDemo.add(1, 1);
-        expect(spyFun.callCount).to.equal(1)
+        expect(testDemo.add.callCount).to.equal(1)
     });
 
     it('4+5!=10',function(){
         testDemo.add(4, 5);
-        expect(spyFun.callCount).to.equal(1);
+        expect(testDemo.add.callCount).to.equal(1);
     })
 })
  
