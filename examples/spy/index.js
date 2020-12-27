@@ -1,14 +1,20 @@
 const sinon = require('sinon');
 
-const testFun = (fn) => {
+// 法1
+const testFun1 = (fn) => {
     fn();
 };
-// 法1
 const cb = sinon.spy();
-testFun(cb);
+testFun1(cb);
 console.log(cb.called);
 
 // 法2
+const testFun2 = (a, b) => { return a + b; };
+const spy = sinon.spy(testFun2);
+spy(1, 2);
+console.log(spy.returnValues[0])
+
+// 法3
 const testObj = {
     test: () => ({})
 };

@@ -20,7 +20,8 @@ module.exports = {
                         ['', 'Introduction'],
                         'sandbox',
                         'restore',
-                        'spy'
+                        'spy',
+                        'stub'
                     ]
                 }
             ],
