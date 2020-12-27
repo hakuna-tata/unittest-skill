@@ -1,8 +1,9 @@
 # spy  
 `spy`的用法主要是收集函数的调用信息。例如验证函数是否被调用、传参列表、返回值等等。
 
-## spy 函数的创建  
-`spy`是`Sandbox`实例上的一个方法。这节主要来介绍一下`sinon.spy(object, "property")`这种创建方式，首先它的入口定义在`./sinon/sandbox.js`中：
+## sandbox.spy(object, "property")
+
+这节主要来介绍一下`sandbox.spy(object, "property")`这种创建方式，首先它的入口定义在`./sinon/sandbox.js`中：
 ```js
 function Sandbox() {
     var sandbox = this;
@@ -42,7 +43,11 @@ function Sandbox() {
     // ...
 }
 ```
-入口主要是将调用 spy 方法的参数传入`sinonSpy`，它的定义在`./sinon/spy.js`中：
+入口主要是将调用 spy 方法的参数传入`sinonSpy`。
+
+## createSpy
+
+这里主要是对透传参数做差异化然后执行`createSpy`函数，它的定义在`./sinon/proxy.js`中：
 ```js
 function createSpy(func) {
     var name;
@@ -103,9 +108,12 @@ function spy(object, property, types) {
 }
 
 ```
-这一步主要是对参数的差异化进行校验然后执行`createSpy`这个函数，然后调用`createProxy`这个函数，它的定义在`./sinon/proxy.js`中：
+## createProxy
+
+
 ```js
 function createProxy(func, originalFunc) {
+    // object[property] 函数套一层代理
     var proxy = wrapFunction(func, originalFunc);
 
     // Inherit function properties:
@@ -122,10 +130,9 @@ function wrapFunction(func, originalFunc) {
     // originalFunc 参数的个数
     var arity = originalFunc.length;
     var p;
-    // Do not change this to use an eval. Projects that depend on sinon block the use of eval.
-    // ref: https://github.com/sinonjs/sinon/issues/710
     switch (arity) {
         case 0:
+            // proxy
             p = function proxy() {
                 return p.invoke(func, this, slice(arguments));
             };
@@ -147,7 +154,7 @@ function wrapFunction(func, originalFunc) {
         // Safari 9 has names that are not configurable.
         Object.defineProperty(p, "name", nameDescriptor);
     }
-    // 把属性合并到 p 这个函数上
+    // 加强 proxy 函数
     extend.nonEnum(p, {
         isSinonProxy: true,
 
@@ -172,4 +179,141 @@ function wrapFunction(func, originalFunc) {
     });
     return p;
 }
+```
+
+## wrapMethod
+```js
+module.exports = function wrapMethod(object, property, method) {
+    if (!object) {
+        throw new TypeError("Should wrap property of object");
+    }
+
+    if (typeof method !== "function" && typeof method !== "object") {
+        throw new TypeError("Method wrapper should be a function or a property descriptor");
+    }
+
+    function checkWrappedMethod(wrappedMethod) {
+        var error;
+
+        if (!isFunction(wrappedMethod)) {
+            error = new TypeError(
+                "Attempted to wrap " + typeof wrappedMethod + " property " + valueToString(property) + " as function"
+            );
+        } else if (wrappedMethod.restore && wrappedMethod.restore.sinon) {
+            error = new TypeError("Attempted to wrap " + valueToString(property) + " which is already wrapped");
+        } else if (wrappedMethod.calledBefore) {
+            var verb = wrappedMethod.returns ? "stubbed" : "spied on";
+            error = new TypeError("Attempted to wrap " + valueToString(property) + " which is already " + verb);
+        }
+
+        if (error) {
+            if (wrappedMethod && wrappedMethod.stackTraceError) {
+                error.stack += "\n--------------\n" + wrappedMethod.stackTraceError.stack;
+            }
+            throw error;
+        }
+    }
+
+    var error, wrappedMethod, i, wrappedMethodDesc;
+
+    function simplePropertyAssignment() {
+        wrappedMethod = object[property];
+        checkWrappedMethod(wrappedMethod);
+        object[property] = method;
+        method.displayName = property;
+    }
+
+    // Firefox has a problem when using hasOwn.call on objects from other frames.
+    /* eslint-disable-next-line @sinonjs/no-prototype-methods/no-prototype-methods */
+    var owned = object.hasOwnProperty ? object.hasOwnProperty(property) : hasOwnProperty(object, property);
+
+    if (hasES5Support) {
+        var methodDesc = typeof method === "function" ? { value: method } : method;
+        wrappedMethodDesc = getPropertyDescriptor(object, property);
+
+        if (!wrappedMethodDesc) {
+            error = new TypeError(
+                "Attempted to wrap " + typeof wrappedMethod + " property " + property + " as function"
+            );
+        } else if (wrappedMethodDesc.restore && wrappedMethodDesc.restore.sinon) {
+            error = new TypeError("Attempted to wrap " + property + " which is already wrapped");
+        }
+        if (error) {
+            if (wrappedMethodDesc && wrappedMethodDesc.stackTraceError) {
+                error.stack += "\n--------------\n" + wrappedMethodDesc.stackTraceError.stack;
+            }
+            throw error;
+        }
+
+        var types = Object.keys(methodDesc);
+        for (i = 0; i < types.length; i++) {
+            wrappedMethod = wrappedMethodDesc[types[i]];
+            checkWrappedMethod(wrappedMethod);
+        }
+
+        mirrorProperties(methodDesc, wrappedMethodDesc);
+        for (i = 0; i < types.length; i++) {
+            mirrorProperties(methodDesc[types[i]], wrappedMethodDesc[types[i]]);
+        }
+        Object.defineProperty(object, property, methodDesc);
+
+        // catch failing assignment
+        // this is the converse of the check in `.restore` below
+        if (typeof method === "function" && object[property] !== method) {
+            // correct any wrongdoings caused by the defineProperty call above,
+            // such as adding new items (if object was a Storage object)
+            delete object[property];
+            simplePropertyAssignment();
+        }
+    } else {
+        simplePropertyAssignment();
+    }
+
+    extend.nonEnum(method, {
+        displayName: property,
+
+        wrappedMethod: wrappedMethod,
+
+        // Set up an Error object for a stack trace which can be used later to find what line of
+        // code the original method was created on.
+        stackTraceError: new Error("Stack Trace for original"),
+
+        restore: function() {
+            // For prototype properties try to reset by delete first.
+            // If this fails (ex: localStorage on mobile safari) then force a reset
+            // via direct assignment.
+            if (!owned) {
+                // In some cases `delete` may throw an error
+                try {
+                    delete object[property];
+                } catch (e) {} // eslint-disable-line no-empty
+                // For native code functions `delete` fails without throwing an error
+                // on Chrome < 43, PhantomJS, etc.
+            } else if (hasES5Support) {
+                Object.defineProperty(object, property, wrappedMethodDesc);
+            }
+
+            if (hasES5Support) {
+                var descriptor = getPropertyDescriptor(object, property);
+                if (descriptor && descriptor.value === method) {
+                    object[property] = wrappedMethod;
+                }
+            } else {
+                // Use strict equality comparison to check failures then force a reset
+                // via direct assignment.
+                if (object[property] === method) {
+                    object[property] = wrappedMethod;
+                }
+            }
+        }
+    });
+
+    method.restore.sinon = true;
+
+    if (!hasES5Support) {
+        mirrorProperties(method, wrappedMethod);
+    }
+
+    return method;
+};
 ```
