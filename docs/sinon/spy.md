@@ -47,7 +47,7 @@ function Sandbox() {
 
 ## createSpy
 
-这里主要是对透传参数做差异化然后执行`createSpy`函数，它的定义在`./sinon/proxy.js`中：
+这里主要是对透传的`object[property]`这个函数传入`createSpy`做一层代理，它的定义在`./sinon/proxy.js`中：
 ```js
 function createSpy(func) {
     var name;
@@ -110,7 +110,7 @@ function spy(object, property, types) {
 ```
 ## createProxy
 
-
+接着就是来给源函数加一层代理（拦截）的具体操作，额外的操作主要是扩展这个代理函数的API，它的定义在`./sinon/proxy.js`中：
 ```js
 function createProxy(func, originalFunc) {
     // object[property] 函数套一层代理
@@ -132,7 +132,7 @@ function wrapFunction(func, originalFunc) {
     var p;
     switch (arity) {
         case 0:
-            // proxy
+            // 最终调用的函数
             p = function proxy() {
                 return p.invoke(func, this, slice(arguments));
             };
@@ -182,68 +182,28 @@ function wrapFunction(func, originalFunc) {
 ```
 
 ## wrapMethod
+
+最终`createSpy(object[property])`返回了上面这个代理函数，接着就执行`wrapMethod`函数，最终返回的还是传入的`method(即proxy函数)`，它的定义在`./sinon/util/core/wrap-method.js`中：
 ```js
+function mirrorProperties(target, source) {
+    for (var prop in source) {
+        if (!hasOwnProperty(target, prop)) {
+            target[prop] = source[prop];
+        }
+    }
+}
+
+var hasES5Support = "keys" in Object;
+
 module.exports = function wrapMethod(object, property, method) {
-    if (!object) {
-        throw new TypeError("Should wrap property of object");
-    }
-
-    if (typeof method !== "function" && typeof method !== "object") {
-        throw new TypeError("Method wrapper should be a function or a property descriptor");
-    }
-
-    function checkWrappedMethod(wrappedMethod) {
-        var error;
-
-        if (!isFunction(wrappedMethod)) {
-            error = new TypeError(
-                "Attempted to wrap " + typeof wrappedMethod + " property " + valueToString(property) + " as function"
-            );
-        } else if (wrappedMethod.restore && wrappedMethod.restore.sinon) {
-            error = new TypeError("Attempted to wrap " + valueToString(property) + " which is already wrapped");
-        } else if (wrappedMethod.calledBefore) {
-            var verb = wrappedMethod.returns ? "stubbed" : "spied on";
-            error = new TypeError("Attempted to wrap " + valueToString(property) + " which is already " + verb);
-        }
-
-        if (error) {
-            if (wrappedMethod && wrappedMethod.stackTraceError) {
-                error.stack += "\n--------------\n" + wrappedMethod.stackTraceError.stack;
-            }
-            throw error;
-        }
-    }
+    // ...
 
     var error, wrappedMethod, i, wrappedMethodDesc;
 
-    function simplePropertyAssignment() {
-        wrappedMethod = object[property];
-        checkWrappedMethod(wrappedMethod);
-        object[property] = method;
-        method.displayName = property;
-    }
-
-    // Firefox has a problem when using hasOwn.call on objects from other frames.
-    /* eslint-disable-next-line @sinonjs/no-prototype-methods/no-prototype-methods */
     var owned = object.hasOwnProperty ? object.hasOwnProperty(property) : hasOwnProperty(object, property);
 
     if (hasES5Support) {
-        var methodDesc = typeof method === "function" ? { value: method } : method;
-        wrappedMethodDesc = getPropertyDescriptor(object, property);
-
-        if (!wrappedMethodDesc) {
-            error = new TypeError(
-                "Attempted to wrap " + typeof wrappedMethod + " property " + property + " as function"
-            );
-        } else if (wrappedMethodDesc.restore && wrappedMethodDesc.restore.sinon) {
-            error = new TypeError("Attempted to wrap " + property + " which is already wrapped");
-        }
-        if (error) {
-            if (wrappedMethodDesc && wrappedMethodDesc.stackTraceError) {
-                error.stack += "\n--------------\n" + wrappedMethodDesc.stackTraceError.stack;
-            }
-            throw error;
-        }
+        // ...
 
         var types = Object.keys(methodDesc);
         for (i = 0; i < types.length; i++) {
@@ -255,13 +215,11 @@ module.exports = function wrapMethod(object, property, method) {
         for (i = 0; i < types.length; i++) {
             mirrorProperties(methodDesc[types[i]], wrappedMethodDesc[types[i]]);
         }
+        // 重新定义object[property]的描述符 **importtant**
         Object.defineProperty(object, property, methodDesc);
 
-        // catch failing assignment
-        // this is the converse of the check in `.restore` below
+
         if (typeof method === "function" && object[property] !== method) {
-            // correct any wrongdoings caused by the defineProperty call above,
-            // such as adding new items (if object was a Storage object)
             delete object[property];
             simplePropertyAssignment();
         }
@@ -317,3 +275,12 @@ module.exports = function wrapMethod(object, property, method) {
     return method;
 };
 ```
+
+## 实际场景demo
+
+[spy debug环境](https://github.com/hakuna-tata/unittest-skill/blob/master/examples/spy/index.js)  
+[spy 实际使用场景](https://github.com/hakuna-tata/unittest-skill/tree/master/examples/spy/spy.spec.js)
+
+## 总结
+
+`spy`函数实际上执行的还是我们的源函数，只是对源函数包裹了一层进行拦截，这使得在单测场景中很方便验证源函数的调用信息了。
