@@ -20,6 +20,7 @@ module.exports = {
                         ['', 'Introduction'],
                         'sandbox',
                         'restore',
+                        'fake',
                         'spy',
                         'stub'
                     ]

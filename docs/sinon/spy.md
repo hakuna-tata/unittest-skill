@@ -1,9 +1,9 @@
 # spy  
-`spy`的用法主要是收集函数的调用信息。例如验证函数是否被调用、传参列表、返回值等等。
+`spy`函数的作用主要是收集函数的调用信息。可以创建匿名函数、包装被测模块已经存在的函数。
 
 ## sandbox.spy(object, "property")
 
-这节主要来介绍一下`sandbox.spy(object, "property")`这种创建方式，首先它的入口定义在`./sinon/sandbox.js`中：
+这节主要来介绍`sandbox.spy(object, "property")`这种创建方式，首先它的入口定义在`./sinon/sandbox.js`中：
 ```js
 function Sandbox() {
     var sandbox = this;
@@ -283,4 +283,4 @@ module.exports = function wrapMethod(object, property, method) {
 
 ## 总结
 
-当执行`spy`函数时，实际上执行的还是源函数。`spy`函数只是对源函数包裹了一层进行拦截，这在单测场景下验证源函数的调用信息就很方便了。
+使用`spy`函数验证源函数的调用信息是一个不错的选择。

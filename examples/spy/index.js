@@ -1,12 +1,12 @@
 const sinon = require('sinon');
 
 // 法1
-const testFun1 = (fn) => {
-    fn();
-};
 const cb = sinon.spy();
-testFun1(cb);
-console.log(cb.called);
+cb({
+    name: 'fff',
+    age: 24
+});
+console.log(cb.calledWith({ name: 'fff' }));
 
 // 法2
 const testFun2 = (a, b) => { return a + b; };
