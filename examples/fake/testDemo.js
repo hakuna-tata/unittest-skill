@@ -1,6 +1,10 @@
 function openUrl(fn){
-    const url = fn();
-    return url;
+    try {
+        const url = fn();
+        return url;
+    } catch (e) {
+        console.log(e);
+    }
 };
 
 module.exports = {

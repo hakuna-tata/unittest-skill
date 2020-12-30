@@ -1,5 +1,5 @@
 # fake
-`fake`函数区别于`spy`和`stub`的最主要点是可以创建具体行为的函数。
+`fake`函数简化并且合并了`spy`函数和`stub`函数的概念。也就是说能用`fake`函数去测试替代的场景，用`spy`或者`stub`一定可以的。
 
 ## sandbox.fake.returns(value)
 
@@ -195,3 +195,7 @@ function wrapFunction(func, originalFunc) {
 
 [fake debug环境](https://github.com/hakuna-tata/unittest-skill/blob/master/examples/fake/index.js)  
 [fake 实际使用场景](https://github.com/hakuna-tata/unittest-skill/tree/master/examples/fake/fake.spec.js)
+
+## 总结
+
+`fake`函数实现相对简易，使用它来解决一些不复杂的测试场景还是挺不错的，但是对于一些更高级的测试替代场景可能就需要使用`spy`函数或者`stub`函数。

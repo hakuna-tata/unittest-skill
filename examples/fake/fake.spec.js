@@ -13,9 +13,10 @@ describe('fake_test',() => {
         expect(result).to.equal('wwww.baidu.com');
     });
 
-    it('fake callback',() => {
-        
-        
+    it('fake catch',() => {
+        const callback = sinon.fake.throws('error');
+        const result = openUrl(callback);
+        expect(result).to.equal(undefined);
     });
 })
 

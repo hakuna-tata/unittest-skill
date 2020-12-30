@@ -1,5 +1,9 @@
 const sinon = require('sinon');
 
+const fake = sinon.fake();
+fake();
+console.log(fake.callCount);
+
 const fake1 = sinon.fake.returns('test');
 
 console.log(fake1());

@@ -283,4 +283,4 @@ module.exports = function wrapMethod(object, property, method) {
 
 ## 总结
 
-使用`spy`函数验证源函数的调用信息是一个不错的选择。
+`spy`函数的 API 非常丰富，使用它验证源函数的调用信息是一个不错的选择。
