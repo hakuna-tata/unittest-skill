@@ -16,6 +16,7 @@ describe('fake_test',() => {
     it('fake catch',() => {
         const callback = sinon.fake.throws('error');
         const result = openUrl(callback);
+        expect(callback).to.throw('error');
         expect(result).to.equal(undefined);
     });
 })

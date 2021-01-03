@@ -22,7 +22,8 @@ module.exports = {
                         'restore',
                         'fake',
                         'spy',
-                        'stub'
+                        'stub',
+                        'useFakeTimers'
                     ]
                 }
             ],
