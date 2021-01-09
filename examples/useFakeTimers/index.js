@@ -1,9 +1,9 @@
 const sinon = require('sinon');
-console.log(setTimeout);
-console.log(setImmediate);
-console.log(requestAnimationFrame);
 
 const clock = sinon.useFakeTimers();
 
-clock.tick(1000);
+setTimeout(() => {
+    console.log('FAKE TIMEOUT');
+}, 3000);
 
+clock.tick(3000);
