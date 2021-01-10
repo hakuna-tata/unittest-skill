@@ -10,6 +10,7 @@ module.exports = {
         lastUpdated: '上次更新',
         nav: [
             { text: 'Sinon', link: '/sinon/' },
+            { text: 'Axios-mock-adapter', link: '/axios-mock-adapter/' },
         ],
         sidebar: {
             '/sinon/': [
@@ -27,6 +28,15 @@ module.exports = {
                     ]
                 }
             ],
+            '/axios-mock-adapter/': [
+                {
+                    title: 'axios-mock-adapter',
+                    collapsable: false,
+                    children: [
+                        ['', 'Introduction'],
+                    ]
+                }
+            ]
         }
     },
 }
