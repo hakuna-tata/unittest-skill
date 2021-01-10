@@ -453,4 +453,4 @@ function createClock(start, loopLimit) {
 [useFakeTimers 实际使用场景](https://github.com/hakuna-tata/unittest-skill/tree/master/examples/useFakeTimers/useFakeTimers.spec.js)
 
 ## 总结
-sandbox 的 `useFakeTimers API`主要依赖就是`@sinonjs/fake-timers`，因此在实际测试场景中就可用于**需要调度语义但又不想真正等待时间的情况**。
+sandbox 的 `useFakeTimers API`主要依赖包`@sinonjs/fake-timers`，在实际测试场景中`useFakeTimers`可用于**需要调度语义但又不想真正等待时间的情况**。
