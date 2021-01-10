@@ -273,11 +273,184 @@ function hijackMethod(target, method, clock) {
 
 ## clock.tick(ms)
 
-上述介绍的是收集`timer`的场景。现在来介绍是如何让`delay time`提前的，进而就可以做到一些延迟的回调可以得到立即执行。
+上述介绍的是收集`timer`的场景。现在来介绍是如何让`delay time`提前的，进而就可以做到一些延迟的回调可以得到立即执行。定义还是在`@sinonjs/fake-timers`这个包中。
 ```js
+
+// 返回 clock 中收集在 tickValue 范围内的 timer
+function firstTimerInRange(clock, from, to) {
+    var timers = clock.timers;
+    var timer = null;
+    var id, isInRange;
+
+    for (id in timers) {
+        if (timers.hasOwnProperty(id)) {
+            isInRange = inRange(from, to, timers[id]);
+
+            if (
+                isInRange &&
+                (!timer || compareTimers(timer, timers[id]) === 1)
+            ) {
+                timer = timers[id];
+            }
+        }
+    }
+
+    return timer;
+}
+
+function callTimer(clock, timer) {
+    if (typeof timer.interval === "number") {
+        clock.timers[timer.id].callAt += timer.interval;
+    } else {
+        delete clock.timers[timer.id];
+    }
+
+    if (typeof timer.func === "function") {
+        // 执行回调
+        timer.func.apply(null, timer.args);
+    } else {
+        eval(timer.func);
+    }
+}
+
+
+function createClock(start, loopLimit) {
+    // ...
+    function doTick(tickValue, isAsync, resolve, reject) {
+        var msFloat =
+            typeof tickValue === "number"
+                ? tickValue
+                : parseTime(tickValue);
+        var ms = Math.floor(msFloat);
+        var remainder = nanoRemainder(msFloat);
+        var nanosTotal = nanos + remainder;
+        // delay time
+        var tickTo = clock.now + ms;
+
+        if (msFloat < 0) {
+            throw new TypeError("Negative ticks are not supported");
+        }
+
+        // adjust for positive overflow
+        if (nanosTotal >= 1e6) {
+            tickTo += 1;
+            nanosTotal -= 1e6;
+        }
+
+        nanos = nanosTotal;
+        // now time
+        var tickFrom = clock.now;
+        var previous = clock.now;
+        var timer,
+            firstException,
+            oldNow,
+            nextPromiseTick,
+            compensationCheck,
+            postTimerCall;
+
+        clock.duringTick = true;
+
+        // ...
+
+        function doTickInner() {
+            // 过滤出来的 timer
+            timer = firstTimerInRange(clock, tickFrom, tickTo);
+            while (timer && tickFrom <= tickTo) {
+                if (clock.timers[timer.id]) {
+                    tickFrom = timer.callAt;
+                    clock.now = timer.callAt;
+                    oldNow = clock.now;
+                    try {
+                        runJobs(clock);
+                        // 执行 clock 中收集 timer 的回调函数
+                        callTimer(clock, timer);
+                    } catch (e) {
+                        firstException = firstException || e;
+                    }
+
+                    if (isAsync) {
+                        originalSetTimeout(nextPromiseTick);
+                        return;
+                    }
+
+                    compensationCheck();
+                }
+
+                postTimerCall();
+            }
+
+            oldNow = clock.now;
+            runJobs(clock);
+            if (oldNow !== clock.now) {
+                tickFrom += clock.now - oldNow;
+                tickTo += clock.now - oldNow;
+            }
+            clock.duringTick = false;
+
+            timer = firstTimerInRange(clock, tickFrom, tickTo);
+            if (timer) {
+                try {
+                    clock.tick(tickTo - clock.now); // do it all again - for the remainder of the requested range
+                } catch (e) {
+                    firstException = firstException || e;
+                }
+            } else {
+                clock.now = tickTo;
+
+                nanos = nanosTotal;
+            }
+            if (firstException) {
+                throw firstException;
+            }
+
+            if (isAsync) {
+                resolve(clock.now);
+            } else {
+                // 前进到 tickValue 的时间
+                return clock.now;
+            }
+        }
+
+        nextPromiseTick =
+            isAsync &&
+            function() {
+                try {
+                    compensationCheck();
+                    postTimerCall();
+                    doTickInner();
+                } catch (e) {
+                    reject(e);
+                }
+            };
+
+        compensationCheck = function() {
+            // compensate for any setSystemTime() call during timer callback
+            if (oldNow !== clock.now) {
+                tickFrom += clock.now - oldNow;
+                tickTo += clock.now - oldNow;
+                previous += clock.now - oldNow;
+            }
+        };
+
+        postTimerCall = function() {
+            timer = firstTimerInRange(clock, previous, tickTo);
+            previous = tickFrom;
+        };
+
+        return doTickInner();
+    }
+    clock.tick = function tick(tickValue) {
+        return doTick(tickValue, false);
+    };
+    // ...
+}
 ```
+至此，`setTimeout`模式下收集以及执行`fake timers`的流程就分析完了，其它模式下的`timer`读者可以自己尝试 debug 分析下。
 
 ## 实际场景demo
 
 [useFakeTimers debug环境](https://github.com/hakuna-tata/unittest-skill/blob/master/examples/useFakeTimers/index.js)  
 [useFakeTimers 实际使用场景](https://github.com/hakuna-tata/unittest-skill/tree/master/examples/useFakeTimers/useFakeTimers.spec.js)
+
+## 总结
+sandbox 的 `useFakeTimers API`主要依赖就是`@sinonjs/fake-timers`，因此在实际测试场景中就可用于**需要调度语义但又不想真正等待时间的情况**。
