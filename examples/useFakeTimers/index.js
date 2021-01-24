@@ -11,3 +11,5 @@ setTimeout(() => {
 }, 1000);
 
 clock.tick(3000);
+
+console.log('sync');
